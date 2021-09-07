@@ -117,20 +117,17 @@ if {[catch "unbind dcc - hal *dcc:hal"]} {
 }
 bind dcc - $nick *dcc:hal
 
-# save brain every ten minutes. works mostly like crontab.
+# save brain every ten minutes.
 bind time - "?0 * * * *" auto_brainsave
 
 bind pub - "!savebrain" pub_savebrain
 bind pub n "!trimbrain" pub_trimbrain
-
 bind pub - "!braininfo" pub_braininfo
 bind pub n "!learningmode" pub_learningmode
 bind pub - "!talkfrequency" pub_talkfrequency
 #bind pub n "!replyrate" pub_talkfrequency
-
-#bind pub n "!restorebrain" pub_restorebrain
-#bind pub n "!lobotomy" pub_lobotomy
-# these SHOULD work now, and should keep backups no matter how many times you lobotomize your bot (so be sure not to do it so often that problems occur.)
+bind pub n "!restorebrain" pub_restorebrain
+bind pub n "!lobotomy" pub_lobotomy
 
 # not yet implemented - eventually will allow lobotomizing without really losing any data
 #bind pubm - "*" pub_learnToTrainingFile
@@ -238,12 +235,27 @@ proc pub_lobotomy {nick uhost hand chan arg} {
 
 	# erase the last old one if it exists
 	file delete $megahal_directory_cache/megahal.brn.old
-	file copy $megahal_directory_cache/megahal.brn $megahal_directory_cache/megahal.brn.old
-	file copy $megahal_directory_cache/megahal.brn "$megahal_directory_cache/megahal.brn.old.[unixtime]-lobotomy"
-	file delete $megahal_directory_cache/megahal.brn
+	file delete $megahal_directory_cache/megahal.phr.old
+	file delete $megahal_directory_cache/megahal.dic.old
 
+	# back up to most recent location for brainfiles
+	file copy $megahal_directory_cache/megahal.brn $megahal_directory_cache/megahal.brn.old
+	file copy $megahal_directory_cache/megahal.phr $megahal_directory_cache/megahal.phr.old
+	file copy $megahal_directory_cache/megahal.dic $megahal_directory_cache/megahal.dic.old
+
+	# and to a timestamped copy
+	file copy $megahal_directory_cache/megahal.brn "$megahal_directory_cache/megahal.brn.old.[unixtime]-lobotomy"
+	file copy $megahal_directory_cache/megahal.phr "$megahal_directory_cache/megahal.phr.old.[unixtime]-lobotomy"
+	file copy $megahal_directory_cache/megahal.dic "$megahal_directory_cache/megahal.dic.old.[unixtime]-lobotomy"
+
+	# then delete our current ones
+	file delete $megahal_directory_cache/megahal.brn
+	file delete $megahal_directory_cache/megahal.phr
+	file delete $megahal_directory_cache/megahal.dic
 	# and our age counter
 	file delete $megahal_directory_cache/megahal.age
+
+	# then create our age counter anew
 	updateBrainAgeCounter
 
 	putlog "megahal.tcl - regenerating brain..."
@@ -297,7 +309,7 @@ proc pub_talkfrequency {nick uhost hand chan arg} {
 
 proc pub_restorebrain {nick uhost hand chan arg} {
 	global megahal_directory_cache
-	if {[file exists $megahal_directory_cache/megahal.old]} {
+	if {[file exists $megahal_directory_cache/megahal.brn.old]} {
 
 		# save and trim our brain first
 		global maxsize
@@ -305,15 +317,21 @@ proc pub_restorebrain {nick uhost hand chan arg} {
 		savebrain
 
 		# then make a backup of it
-		file copy $megahal_directory_cache/megahal.brn "$megahal_directory_cache/megahal.brn.old.[unixtime]-restore"
+		file copy $megahal_directory_cache/megahal.brn "$megahal_directory_cache/megahal.brn.old.[unixtime]-prerestore"
+		file copy $megahal_directory_cache/megahal.phr "$megahal_directory_cache/megahal.phr.old.[unixtime]-prerestore"
+		file copy $megahal_directory_cache/megahal.dic "$megahal_directory_cache/megahal.dic.old.[unixtime]-prerestore"
 		file delete $megahal_directory_cache/megahal.brn
+		file delete $megahal_directory_cache/megahal.phr
+		file delete $megahal_directory_cache/megahal.dic
 
 		# and our age counter
 		file delete $megahal_directory_cache/megahal.age
 		updateBrainAgeCounter
 
 		# then copy in our new brain
-		file copy $megahal_directory_cache/megahal.old $megahal_directory_cache/megahal.brn
+		file copy $megahal_directory_cache/megahal.brn.old $megahal_directory_cache/megahal.brn
+		file copy $megahal_directory_cache/megahal.phr.old $megahal_directory_cache/megahal.phr
+		file copy $megahal_directory_cache/megahal.dic.old $megahal_directory_cache/megahal.dic
 
 		# and reload from it.
 		reloadbrain
