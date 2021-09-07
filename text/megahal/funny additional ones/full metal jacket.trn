@@ -1,3 +1,7 @@
+# megahal training file - lines starting with #s are ignored - no line can be longer than 256 bytes.
+# contents: script of "full metal jacket"
+# source: z0rc's github repository for megahal.mod
+
 I am Gunnery Sergeant Hartman, your Senior Drill Instructor.
 From now on, you will speak only when spoken to, and the first and last words out of your filthy sewers will be "Sir!". Do you maggots understand that?
 Bullshit! I can't hear you. Sound off like you got a pair.

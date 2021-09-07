@@ -1,3 +1,8 @@
+# megahal training file - lines starting with #s are ignored - no line can be longer than 256 bytes.
+# contents: exact russian-translated copy of vanilla megahal training materials
+# source: z0rc's github repository for megahal.mod
+# note: this may not work with eggdrop. something about not supporting utf-8 properly in Tcl?
+
 #http://www.giganto.ru/2007/11/10/krasivye-umnye-frazy-o-lyubvi
 Больше всего люди любят, когда их любят.
 Любить, когда тебя не любят, это все равно, что отвечать, когда тебя не спрашивают.
