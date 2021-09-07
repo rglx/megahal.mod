@@ -1,4 +1,4 @@
-# note:
+# note on the russian-translated training files
 
 some of these might not actually work with your bot unless it, megahal.mod, and tcl itself are all compiled with the right encoding
 

@@ -1,16 +1,22 @@
 #!/usr/bin/env eggdrop
 # worth a shot i guess
 
-# megahal.tcl accompanying script v3.7
+# megahal.tcl accompanying script v3.7.1
 # september 2021 (that's like 22 years of megahal!)
 # newer modifications & documentation by rglx
 # previous modifications to megahal by zev and z0rc
 # original megahal code by Jason Hutchens
 
+putlog "megahal.tcl v3.7.1 - companion script for megahal AI starting up..."
+
+# REMOVE ANY REFERENCES TO MEGAHAL FROM YOUR BOT'S EXISTING CONFIG
+# AND REPLACE THEM WITH WHAT IS SUGGESTED IN THIS REPOSITORY'S README!
+
 # CONFIGURATION START - edit these variables to your liking.
 
 set megahal_directory_resources "text/megahal/"
-# stores brain training material and other training/learning data files
+# stores brain training material and other training/learning data files.
+# folder AND training files need to be present prior to module load or the bot will segfault on start.
 
 set megahal_directory_cache "data/megahal/"
 # stores brain files and other bot-generated stuff
@@ -58,7 +64,7 @@ set maxcontext 2
 # Surprise mode on or off (0/1)
 # This changes the way it constructs sentences. 
 # If on, it tries to find unconventional combinations of words which means much more fun but also more incoherent sentences
-# If off, sentences are safer but more parrot-like so this is only recommended if the brain size is huge )in which case the bot has many safe options to use).
+# If off, sentences are safer but more parrot-like so this is only recommended if the brain size is huge (in which case the bot has many safe options to use).
 set surprise 1
 
 # Max reply words
@@ -67,59 +73,103 @@ set surprise 1
 # Recommended setting is about 25-40, set to 0 to allow unlimited size
 set maxreplywords 30
 
+# Learn to Training File setting (0/1)
+# saves a copy of whatever sentences it sees to the main training file
+# useful for lobotomizing the bot on every start and just re-training from that file. 
+# NOTE: if you're on a newer IRCd with line lengths longer than 256, this will KILL YOUR BOT.
+# also, it's not even close to done yet so i'll likely add support for preventing this soon.
+set learnToTrainingFile 0
+
 # END CONFIGURATION - congrats! you're done. return to the readme for the last steps.
+
+
 
 # set learning mode
 learningmode $learnmode
 # tell megahal our actual bot nickname
 set megabotnick $nick
 
+if {$megahal_directory_resources == ""} { die "megahal.tcl - config error: resource directory is invalid!"}
+if {$megahal_directory_cache == ""} { die "megahal.tcl - config error: cache directory is invalid!"}
+# sanity checking
+
 # unbind bot nick bindings
 if {[catch "unbind pubm - ${nick}: *pub:hal:"]} {
-	putlog "failed to unbind pubm for bot nickname"
+	putlog "megahal.tcl - failed to unbind pubm for bot nickname"
 } else {
-	putlog "successfully unbound pubm for bot nickname"
+	putlog "megahal.tcl - successfully unbound pubm for bot nickname"
 }
 
 if {[catch "unbind pub - ${nick}: *pub:hal:"]} {
-	putlog "failed to unbind pub for bot nickname"
+	putlog "megahal.tcl - failed to unbind pub for bot nickname"
 } else {
-	putlog "successfully unbound pub for bot nickname"
+	putlog "megahal.tcl - successfully unbound pub for bot nickname"
 }
 bind pubm - ${nick}: *pub:hal:
+# then only re-bind to pubms so that other AI scripts loaded into the same bot can function
+# e.g. my fork of bmotion
 
 #unbind (and rebind dcc)
 if {[catch "unbind dcc - hal *dcc:hal"]} {
-	putlog "failed to unbind dcc bind for bot nickname"
+	putlog "megahal.tcl - failed to unbind dcc bind for bot nickname"
 } else {
-	putlog "successfully unbound dcc bind for bot nickname"
+	putlog "megahal.tcl - successfully unbound dcc bind for bot nickname"
 }
-#bind dcc - $nick *dcc:hal
-
+bind dcc - $nick *dcc:hal
 
 # save brain every ten minutes. works mostly like crontab.
 bind time - "?0 * * * *" auto_brainsave
 
 bind pub - "!savebrain" pub_savebrain
 bind pub n "!trimbrain" pub_trimbrain
-#bind pub n "!lobotomy" pub_lobotomy
+
 bind pub - "!braininfo" pub_braininfo
 bind pub n "!learningmode" pub_learningmode
 bind pub - "!talkfrequency" pub_talkfrequency
 #bind pub n "!replyrate" pub_talkfrequency
-#bind pub n "!restorebrain" pub_restorebrain
 
- # not yet implemented - eventually will allow lobotomizing without really losing any data
+#bind pub n "!restorebrain" pub_restorebrain
+#bind pub n "!lobotomy" pub_lobotomy
+# these SHOULD work now, and should keep backups no matter how many times you lobotomize your bot (so be sure not to do it so often that problems occur.)
+
+# not yet implemented - eventually will allow lobotomizing without really losing any data
 #bind pubm - "*" pub_learnToTrainingFile
+proc pub_learnToTrainingFile {nick uhost hand chan text} {
+	# this function essentially will append whatever lines the bot hears onto your training file.
+	# requirements: learnmode = on and talkfreq = 1
+	global learnmode
+	global learnfreq
+	global learnToTrainingFile
+	global megahal_directory_resources
+	global megahal_directory_cache
+	# retrieve config stuff
+
+	if {learnmode != "on"} { return }
+	if {$learnfreq != 1} { return }
+	if {$learnToTrainingFile != 1} { return }
+	# basic sanity checking
+
+	set replaceNicknamesWith "nick"
+	set minimumNicknameReplacementLength 3
+	set replaceWholeNicknameOnly "true"
+	# what can we replace nicknames found in text with
+	# and to prevent someone /nick'ing to 'a' or '`' or '[' and breaking the bot, let's ignore below a certain threshold
+	# and finally do we only want to check for whole word matches or replace any instance anywhere in the incoming line?
+
+	# unfinished. soon, very soon.
+
+}
+
 
 proc updateBrainAgeCounter {} {
+	# function to create a file that's used to determine the age of a brain
 	global megahal_directory_cache
 	# retrieve existing directory
 	if {[file exists "$megahal_directory_cache/megahal.brn"]} {
 		# ok, it exists, let's use its modtime
 		if {[file exists "$megahal_directory_cache/megahal.age"]} {
 			# our age file exists already...so we shouldn't mess with it
-			putlog "not overwriting brain age counter"
+			putlog "megahal.tcl - not overwriting existing age counter"
 		} else {
 			putlog "megahal.tcl - brain age counter nonexistent - using last modified time of current brain"
 			set newAgeCounterFileHandle [open "$megahal_directory_cache/megahal.age" w]
@@ -127,7 +177,8 @@ proc updateBrainAgeCounter {} {
 			close $newAgeCounterFileHandle
 		}
 	} else {
-		# brain file doesn't exist yet, so let's just use current time
+		putlog "megahal.tcl - brain file not saved just yet (or otherwise not present), using current timestamp for age counter"
+		# brain file doesn't exist yet, so let's just use current time as megahal module will create it when it's saved
 		set newAgeCounterFileHandle [open "$megahal_directory_cache/megahal.age" w]
 		puts $newAgeCounterFileHandle [unixtime]
 		close $newAgeCounterFileHandle
@@ -147,14 +198,17 @@ proc pub_savebrain {nick uhost hand chan arg} {
 	global maxsize
 	putlog "megahal.tcl - $nick is manually saving our brain..."
 	trimbrain $maxsize
+	savebrain
 	set for [treesize -1 0]
 	set back [treesize -1 1]
-	savebrain
 	puthelp "NOTICE $chan :Brain saved, word count: [lindex $for 0], nodes: [expr [lindex $for 1]+[lindex $back 1]]"
 }
 
 proc pub_trimbrain {nick uhost hand chan arg} {
-	global maxsize
+	global learnmode
+	global maxcontext
+	global maxreplywords
+	global megahal_directory_cache
 	putlog "megahal.tcl - $nick is manually trimming our brain..."
 	set arg1 [lindex $arg 0]
 	if {$arg1 == "" || ![isnum $arg1]} {
@@ -163,13 +217,17 @@ proc pub_trimbrain {nick uhost hand chan arg} {
 	trimbrain $arg1
 	savebrain
 
+	set for [treesize -1 0]
+	set back [treesize -1 1]
 	putlog "megahal.tcl - brain manually trimmed down to $arg1 nodes"
-	puthelp "NOTICE $chan :brain trimmed down to $arg1 nodes. word count: [lindex $for 0], nodes: [expr [lindex $for 1]+[lindex $back 1]]"
+	puthelp "NOTICE $chan :brain trimmed down to $arg1 nodes. words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode - maxcontext: $maxcontext - maxwords: $maxreplywords"
 }
 
 proc pub_lobotomy {nick uhost hand chan arg} {
+	global learnmode
+	global maxcontext
+	global maxreplywords
 	global megahal_directory_cache
-	global maxsize
 	putlog "megahal.tcl - preparing for lobotomy (by order of $nick)..."
 
 	# save and trim our brain first
@@ -197,18 +255,20 @@ proc pub_lobotomy {nick uhost hand chan arg} {
 	set back [treesize -1 1]
 
 	putlog "megahal.tcl - lobotomy completed, regenerated from training texts"
-	puthelp "NOTICE $chan :lobotomy completed, regenerated from training texts. word count: [lindex $for 0], nodes: [expr [lindex $for 1]+[lindex $back 1]]"
+	puthelp "NOTICE $chan :(megahal) Lobotomy completed, regenerated from training texts. words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode - maxcontext: $maxcontext - maxwords: $maxreplywords"
 }
 
 proc pub_braininfo {nick uhost hand chan arg} {
 	global learnmode
+	global maxcontext
+	global maxreplywords
 	global megahal_directory_cache
 	set for [treesize -1 0]
 	set back [treesize -1 1]
 	if {[file exists "$megahal_directory_cache/megahal.age"]} {
-		puthelp "NOTICE $chan :(megahal brain info) words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode - age: [duration [expr [unixtime] - [file mtime "$megahal_directory_cache/megahal.age"]]]"
+		puthelp "NOTICE $chan :(megahal) words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode - maxcontext: $maxcontext - maxwords: $maxreplywords - age: [duration [expr [unixtime] - [file mtime "$megahal_directory_cache/megahal.age"]]]"
 	} else {
-		puthelp "NOTICE $chan :(megahal brain info) words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode"
+		puthelp "NOTICE $chan :(megahal) words: [lindex $for 0] - nodes: [expr [lindex $for 1]+[lindex $back 1]] - learningmode: $learnmode - maxcontext: $maxcontext - maxwords: $maxreplywords"
 	}
 }
 
@@ -216,12 +276,12 @@ proc pub_learningmode {nick uhost hand chan arg} {
 	global learnmode
 	set arg1 [lindex $arg 0]
 	if {$arg1 == "" || ($arg1 != "on" && $arg1 != "off")} {
-		puthelp "NOTICE $chan :specify on or off. currently: $learnmode"
+		puthelp "NOTICE $chan :(megahal) Specify on or off. currently: $learnmode"
 		return
 	}
 	set learnmode $arg1
 	learningmode $learnmode
-	puthelp "NOTICE $chan :learning from all channels is now $learnmode" 
+	puthelp "NOTICE $chan :(megahal) Learning from all channels (and DMs/DCC) is now $learnmode" 
 }
 
 proc pub_talkfrequency {nick uhost hand chan arg} {
@@ -258,9 +318,9 @@ proc pub_restorebrain {nick uhost hand chan arg} {
 		# and reload from it.
 		reloadbrain
 
-		puthelp "NOTICE $chan :restored most recent brain!"
+		puthelp "NOTICE $chan :(megahal) Restored most recent brain!"
 	} else {
-		puthelp "NOTICE $chan :old brain file doesn't exist."
+		puthelp "NOTICE $chan :(megahal) Old brain file doesn't exist."
 	}
 }
 
