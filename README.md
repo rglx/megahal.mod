@@ -23,6 +23,12 @@ version 3.7.1, with special changes to the script and very, very minor changes t
 1. run `!brainsave` in IRC to save your bot's brain. if everything went smoothly this should tell you some information about your bot in addition to making sure the bot's working OK.
 1. anywhere you want the bot talking on its own, run `.chanset <#channel> +megahal` in DCC (or the bot's console if you use a tmux session and the `-nt` execution argument)
 
+# [contributing (see the issues section)](<../../issues>)
+
+if you found some old copy of the source for a different 3.x version of megahal.mod, diff it against this one, and tell me what you find, or just upload it somewhere and hit me up in the issues section. i'm always looking for more cool things to add to this repository. it's not just gonna be for 3.7.
+
+i won't be changing brain structures or other lower-level things like that in the main part of this repository, only some polishing of the main code.
+
 # technical documentation
 
 most of this i've just gathered over years and years of running an eggdrop bot with this module loaded on an irc channel (or in one instance, a telegram group chat) and just experimenting with the bot or debugging mysterious crashes on startup or what have you, so some of it could be flat out wrong compared to what zev, z0rc, hutch, and the others know as facts.
