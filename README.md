@@ -4,12 +4,12 @@ Artificially Intelligent conversation with learning capability and psychotic per
 
 version 3.7.1, with special changes to the script and very, very minor changes to the module itself by rglx.
 
-## requirements
+# requirements
  - recent version of eggdrop ( https://www.eggheads.org/ ) compiled, running, set up and operational in a channel already
  - the megahal.mod folder (not the main repository, but the subfolder here which should contain the Makefile and the .c and .h files)
  - the training text files of your choosing
 
-## installation
+# installation
 1. stop your bot and make a backup of your userfile, channelfile, and while you're at it, everything else in `~/eggdrop`.
 1. add the megahal.mod folder (not the whole repository! just the subdirectory!) to eggdrop's source code directory under `eggdrop-<version>/src/mod/`. inside `eggdrop-<version>/src/mod/megahal.mod/` should be `Makefile`, `megahal.c`, and `megahal.h`.
 1. seriously, make that backup.
@@ -23,13 +23,13 @@ version 3.7.1, with special changes to the script and very, very minor changes t
 1. run `!brainsave` in IRC to save your bot's brain. if everything went smoothly this should tell you some information about your bot in addition to making sure the bot's working OK.
 1. anywhere you want the bot talking on its own, run `.chanset <#channel> +megahal` in DCC (or the bot's console if you use a tmux session and the `-nt` execution argument)
 
-## technical documentation
+# technical documentation
 
 most of this i've just gathered over years and years of running an eggdrop bot with this module loaded on an irc channel (or in one instance, a telegram group chat) and just experimenting with the bot or debugging mysterious crashes on startup or what have you, so some of it could be flat out wrong compared to what zev, z0rc, hutch, and the others know as facts.
 
 also, it might kill YOUR brain to know what goes on inside megahal's. you've been warned.
 
-### changes since v3.7 (found on z0rc's github)
+## changes since v3.7 (found on z0rc's github)
 
  - changed the main binds inside the megahal module to be `pubm` instead of `pub`, which was preventing other AI scripts from hearing things from IRC.
  - overhaul of the `megahal.tcl` script, including:
@@ -37,9 +37,9 @@ also, it might kill YOUR brain to know what goes on inside megahal's. you've bee
    - deeper explanations of the configuration
    - now requiring the script for functionality (as it does lots of things for you)
 
-### directory structure aka "what files do what"
+## directory structure aka "what files do what"
 
-#### partial directory listing of your bot
+### partial directory listing of your bot
 ```
 + eggdrop/ - eggdrop's working/install directory
 |
@@ -84,25 +84,26 @@ also, it might kill YOUR brain to know what goes on inside megahal's. you've bee
 
 ```
 
-#### megahal.tcl
+### megahal.tcl
 
 this script was originally developed by a number of other people and when Nexor wrote 3.7's custom folder configuration options the script didn't respect any of the settings it had, so i took some quality time and rewrote it. as a result, the script is required for running with this version of megahal.
 
-##### features (aka why should you use it)
+#### features (aka why should you use it)
  - allows some simple statistics reporting about the brain
  - automatically saves the brain every ten minutes
  - eases management of multiple brains to an extent
  - allows controlling frequency of replies and toggling learning mode on and off temporarily
 
-##### changes
+#### changes
+(since version 3.7 which the script wasn't fully supporting)
 
 1. added an age timestamping file in the brain directory (`megahal.age`) which contains either the last modified time (as reported by filesystem) of the brain, or the current timestamp if the brain file is absent. you can change this to a more accurate value after it's created.
 1. repaired lobotomy and restorebrain commands and added functionality with the new age timestamp file
 1. changed all returned messages to NOTICEs to the channel they're run in to prevent other bots from learning output from this one
 1. bumped the version number
-1. 
+1. actually handle saving/restoring properly and support preservation of .phr and .dic files to prevent horrible things from occurring
 
-##### commands
+#### commands
 commands added as a part of the companion script
 
  - `!savebrain` - trims the brain down to your maximum nodes and then saves the brain to file, reporting some statistics afterwards.
@@ -113,33 +114,39 @@ commands added as a part of the companion script
  - `!talkfrequency` - on-the-fly, temporary (until bot restart/rehash) adjustment of talking frequency.
  - `!learningmode` - on-the-fly, temporary (until bot restart/rehash) enable/disable of learning lines from the channels its in
 
-#### megahal.so
+### megahal.so
 not much to say here... it's the compiled version of the megahal module for eggdrop. see the contributors section way down below for more info on who wrote it. basically uninterpretable to me, i only barely managed to adjust the following:
 
  - changed pub binding of botnicks and `*` to pubm to allow another AI or something to see the messages.
 
-##### commands
+#### commands
 commands added from the module itself
 
  - `!forget` - forces the bot to forget a certain phrase
  - `!forgetword` - forces the bot to remove a word from its dictionary
  - `!megaver` - reports current version of megahal
 
-#### megahal.trn
+### megahal.trn
 contains a bunch of sentences whose purpose is to expand the vocabulary and the phrases the bot knows. there's currently some limitations that i've run into so I'll go ahead and list those here:
 
  - don't have a single line longer than 256 *bytes*, incuding the trailing newline. this will cause the bot to segfault while training a brain anew from this file. lines from IRC can (seemingly) be as expansive as 512 with no issues, but this file is particularly restrictive.
  - don't put weird characters in it. anything non-ascii will likely cause issues (and thus, a segfault) while training a brain anew.
  - don't make it fucking huge. i think the maximum safest value for this is probably around 100MB. the relation between this file's size and RAM use on training start is exponential, but afterwards it can (until it tries to generate a sentence) drop back down.
 
-#### megahal.aux, megahal.ban, and megahal.swp
+### megahal.aux, megahal.ban, and megahal.swp
 contain words that can either:
 
 - be only used as supplementary keywords attached to other words inside the brain
 - not be used as keywords at all
 - be swapped with other keywords to get a different set of possibilites
 
-## contributors
+### megahal.brn, megahal.phr, and megahal.dic
+brain, phrase file, and dictionary. these comprise the entirety of your bot's brain! you should not mix and match with other brains' phrasefiles and dictionaries. the script will keep track of these for you.
+
+### megahal.age
+generated by the companion script. contains a unix timestamp of when the brain was created or earliest known modified time, whichever we could find that's earlier. you can edit this once it's created to be more accurate.
+
+# contributors
 - original megahal code by Jason Hutchens (1999)
 - eggdrop module and initial companion script by Zev ^Baron^ Toledano (up to 3.5), z0rc (3.6), and Nexor (v3.7)
 - further minor revisions by rglx (2021)
